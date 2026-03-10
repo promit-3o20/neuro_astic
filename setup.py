@@ -4,7 +4,7 @@ setup(
     name="poetryeeg_anlys",
     version="0.1.0",
     packages=find_packages("src"),
-    package_dir={"":"src"},
+    package_dir={"": "src"},
     install_requires=[
         "mne",
         "numpy",
@@ -12,7 +12,7 @@ setup(
         "matplotlib",
         "pathlib",
         "scipy",
-        # "",
+        "scikit-learn",
         # "PyWavelets",
         # add more dependencies here if needed
     ],

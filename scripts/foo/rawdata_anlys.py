@@ -30,11 +30,11 @@ def filters():
     """
     pass
 
-def visuals():
-    pass
-
-def sig_info():
-    pass 
-
 def logs():
+    """
+    Log all the information. warning, errors, info etc into a log file for debugging.
+
+    Parameters:
+    Returns:
+    """
     pass
