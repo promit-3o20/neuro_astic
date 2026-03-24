@@ -34,11 +34,11 @@ from pathlib import Path
 
 CONFIG = {
     "sampling_rate": 512,
-    "filter_type": "bandpass",  # "highpass" or "bandpass"
+    "filter_type": "highpass",  # "highpass" or "bandpass"
     "highpass": 0.5,
     "bandpass": (0.5, 40),
-    "epoch_window": (-0.2, 1.0),
-    "baseline": (-0.2, 0),
+    "epoch_window": (-0.4, 10),
+    "baseline": (-0.4, 0),
     "reject_threshold": 100e-6,
     "ica_components": 20,
     "plot": False,  # Disable plots in batch mode
