@@ -34,10 +34,10 @@ from pathlib import Path
 
 CONFIG = {
     "sampling_rate": 512,
-    "filter_type": "highpass",  # "highpass" or "bandpass"
+    "filter_type": "bandpass",  # "highpass" or "bandpass"
     "highpass": 0.5,
     "bandpass": (0.5, 40),
-    "epoch_window": (-0.4, 10),
+    "epoch_window": (-0.4, 11),
     "baseline": (-0.4, 0),
     "reject_threshold": 100e-6,
     "ica_components": 20,
@@ -209,7 +209,7 @@ def run_single():
 
 if __name__ == "__main__":
 
-    MODE = "batch"   # change to "single" for testing
+    MODE = "single"   # change to "single" for testing
 
     if MODE == "single":
         CONFIG["plot"] = True

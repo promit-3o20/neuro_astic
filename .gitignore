@@ -77,6 +77,7 @@ data/
 results/
 notebooks/
 logs/
+scripts/foo/fooo.py
 
 # OS Files
 .DS_Store
