@@ -78,6 +78,7 @@ results/
 notebooks/
 logs/
 scripts/foo/fooo.py
+experimental_rubbish/
 
 # OS Files
 .DS_Store
