@@ -46,7 +46,7 @@ CONFIG = {
     "reject_tmin": 0.0,
     "reject_tmax": 10.0,
     "ica_components": 20,
-    "stim_onset": 65281,
+    "stim_onset": 65282,
     "stim_codes": [65281, 65282, 65283, 65284],
     "rest_start": (65285, 65286),
     "rest_end": (65287, 65288),
@@ -83,7 +83,7 @@ def setup_logger(subject_id):
     logger = logging.getLogger(subject_id)
     logger.setLevel(logging.INFO)
 
-    log_file = LOG_DIR / f"{subject_id}_log.txt"  # ✅ use Path
+    log_file = LOG_DIR / f"{subject_id}_log.log"  # ✅ use Path
 
     handler = logging.FileHandler(log_file)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -189,10 +189,10 @@ def extract_events(raw, logger):
 
 
 def epoch_stimulus(raw, events, event_id, logger):
-    if "65281" not in event_id:
+    if "65282" not in event_id:
         raise ValueError("65281 not found in annotations")
 
-    stim_code = event_id["65281"]
+    stim_code = event_id["65282"]
 
     stim_events = events[events[:, 2] == stim_code]
 
