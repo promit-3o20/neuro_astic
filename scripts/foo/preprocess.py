@@ -318,7 +318,7 @@ def preprocessing_pipeline(file_path):
 
         # ---- STIM ----
         stim_epochs = epoch_stimulus(raw, events, event_id, logger)
-        stim_epochs = reject_epochs(stim_epochs, logger, "STIM")
+        # stim_epochs = reject_epochs(stim_epochs, logger, "STIM")
         save_epochs(stim_epochs, STIM_EPO / f"{subject_id}_stim_epo.fif")
 
         # ---- REST ----
