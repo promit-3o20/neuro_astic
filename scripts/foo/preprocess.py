@@ -28,6 +28,7 @@ Steps:
 import os
 import mne
 import numpy as np
+import pandas as pd
 import logging
 from pathlib import Path
 
@@ -69,9 +70,13 @@ EPOCH_DIR = DATA_DIR / "intrmd_data/epochs"
 START_REST_EPO = EPOCH_DIR / "strt_rst"
 END_REST_EPO = EPOCH_DIR / "end_rst"
 STIM_EPO = EPOCH_DIR / "stim"
+G_STIM = STIM_EPO / "g_stim"
+B_STIM = STIM_EPO / "b_stim"
+INDICES_STIM = STIM_EPO / "indices_stim"
+WHOLE_STIM_EPO = STIM_EPO / "whole_stim"
 
 # create all directories (including logs)
-for d in [FILTER_DIR, ICA_DIR, START_REST_EPO, END_REST_EPO, STIM_EPO, LOG_DIR]:
+for d in [FILTER_DIR, ICA_DIR, START_REST_EPO, END_REST_EPO, STIM_EPO, WHOLE_STIM_EPO, G_STIM, B_STIM, INDICES_STIM, LOG_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 # ==============================
@@ -190,25 +195,35 @@ def extract_events(raw, logger):
 
 def epoch_stimulus(raw, events, event_id, logger):
     if "65282" not in event_id:
-        raise ValueError("65281 not found in annotations")
+        raise ValueError("65282 not found in annotations")
 
     stim_code = event_id["65282"]
 
     stim_events = events[events[:, 2] == stim_code]
 
-    logger.info(f"Stim trials found: {len(stim_events)}")
+    logger.info(f"Stim trials found (including practice): {len(stim_events)}")
 
+    # Step 1: Create epochs WITHOUT final indexing
     epochs = mne.Epochs(
         raw,
         stim_events,
         tmin=CONFIG["epoch_tmin"],
         tmax=CONFIG["epoch_tmax"],
         baseline=CONFIG["baseline"],
-        # baseline=None,
         preload=True,
     )
-    # epochs.apply_baseline(CONFIG["baseline"])
+
+    # Step 2: Remove first 2 practice trials
+    epochs = epochs[2:]
+
+    logger.info(f"After removing practice trials: {len(epochs)} trials (expected 210)")
+
+    # Step 3: Assign clean trial index (0–209)
+    metadata = pd.DataFrame({"trial_index": np.arange(len(epochs))})
+    epochs.metadata = metadata
+
     print("Baseline inside function:", epochs.baseline)
+
     return epochs
 
 
@@ -269,6 +284,7 @@ def epoch_rest(raw, events, event_id, rest_pair, label, logger):
 # ==============================
 
 
+'''
 def reject_epochs(epochs, logger, label):
     reject_criteria = dict(eeg=CONFIG["reject_threshold"])
 
@@ -281,6 +297,47 @@ def reject_epochs(epochs, logger, label):
     logger.info(f"{label} epochs before: {before}, after rejection: {after}")
 
     return epochs
+'''
+def reject_epochs(epochs, logger, label):
+    reject_criteria = dict(eeg=CONFIG["reject_threshold"])
+
+    before = len(epochs)
+
+    # Keep original indices explicitly
+    original_idx = np.arange(len(epochs))
+
+    # Copy and apply rejection
+    epochs_copy = epochs.copy()
+    epochs_copy.drop_bad(reject=reject_criteria)
+
+    after = len(epochs_copy)
+
+    # drop_log from copy
+    drop_log = epochs_copy.drop_log
+
+    # 🔑 Align drop_log safely
+    n_epochs = len(epochs)
+    drop_log = drop_log[:n_epochs]
+
+    # Identify indices
+    good_mask = np.array([len(log) == 0 for log in drop_log])
+    bad_mask = np.array([len(log) > 0 for log in drop_log])
+
+    good_idx = original_idx[good_mask]
+    bad_idx = original_idx[bad_mask]
+
+    logger.info(f"{label} epochs before: {before}, after rejection: {after}")
+    logger.info(f"{label} good epochs: {len(good_idx)}, bad epochs: {len(bad_idx)}")
+    logger.info(f"{label} drop_log length: {len(drop_log)}, epochs length: {n_epochs}")
+
+    logger.info(f"{label} first 10 good_idx: {good_idx[:10].tolist()}")
+    logger.info(f"{label} first 10 bad_idx: {bad_idx[:10].tolist()}")
+
+    # Extract using safe indices
+    epochs_good = epochs[good_idx.tolist()]
+    epochs_bad = epochs[bad_idx.tolist()]
+
+    return epochs_good, epochs_bad, good_idx.tolist(), bad_idx.tolist()
 
 
 # ==============================
@@ -318,20 +375,37 @@ def preprocessing_pipeline(file_path):
 
         # ---- STIM ----
         stim_epochs = epoch_stimulus(raw, events, event_id, logger)
-        # stim_epochs = reject_epochs(stim_epochs, logger, "STIM")
-        save_epochs(stim_epochs, STIM_EPO / f"{subject_id}_stim_epo.fif")
+
+        # Step 1: Save ALL (210 trials)
+        save_epochs(stim_epochs, WHOLE_STIM_EPO / f"{subject_id}_allstim_epo.fif")
+
+        # Step 2: Reject with full control
+        stim_good, stim_bad, good_idx, bad_idx = reject_epochs(stim_epochs, logger, "STIM")
+
+        # Step 3: Save GOOD epochs
+        save_epochs(stim_good, G_STIM / f"{subject_id}_stim_epo.fif")
+
+        # Step 4: Save BAD epochs (NEW)
+        save_epochs(stim_bad, B_STIM / f"{subject_id}_badstim_epo.fif")
+
+        # Step 5: Save indices (VERY IMPORTANT)
+        np.savez(
+            INDICES_STIM / f"{subject_id}_indices.npz",
+            good_idx=good_idx,
+            bad_idx=bad_idx
+        )
 
         # ---- REST ----
         start_rest = epoch_rest(raw, events, event_id, CONFIG["rest_start"], "START", logger)
         end_rest = epoch_rest(raw, events, event_id, CONFIG["rest_end"], "END", logger)
 
         if start_rest:
-            start_rest = reject_epochs(start_rest, logger, "START REST")
-            save_epochs(start_rest, START_REST_EPO / f"{subject_id}_strt_rest_epo.fif")
+            start_good, start_bad, _, _ = reject_epochs(start_rest, logger, "START REST")
+            save_epochs(start_good, START_REST_EPO / f"{subject_id}_strt_rest_epo.fif")
 
         if end_rest:
-            end_rest = reject_epochs(end_rest, logger, "END REST")
-            save_epochs(end_rest, END_REST_EPO / f"{subject_id}_end_rest_epo.fif")
+            end_good, end_bad, _, _ = reject_epochs(end_rest, logger, "END REST")
+            save_epochs(end_good, END_REST_EPO / f"{subject_id}_end_rest_epo.fif")
 
         logger.info("Processing completed successfully")
 
@@ -364,7 +438,7 @@ if __name__ == "__main__":
         print("No files found")
     else:
         # 👉 DEBUG MODE (IMPORTANT FOR YOU)
-        preprocessing_pipeline(str(files[0]))
+        preprocessing_pipeline(str(files[1]))
 
         # 👉 AFTER VALIDATION
         # batch_process()
