@@ -102,26 +102,48 @@ This design enables linking **neural responses with subjective aesthetic judgmen
 ```
 .
 ├── data
-│   ├── intrmd_data
-│   └── raw_data
-│       └── ds006648-download
-│
+│   ├── features
+│   │   └── sub-021_bpfeatures.parquet
+│   ├── intrmd_data
+│   │   ├── epochs
+│   │   ├── filtered
+│   │   ├── ica_signal
+│   │   ├── labeled
+│   │   └── raw_label
+│   └── raw_data
+│       ├── ds006647-download
+│       └── ds006648-download
+├── experimental_rubbish
+│   ├── preprocessing_eeg.py
+│   ├── rawdata_anlys.py
+│   ├── v00_preprocess_eeg_fixed.py
+│   └── v00_preprocess_eeg.py
+├── logs
+│   ├── fetrs
+│   │   └── bandpower.log
+│   └── preprs
+│       ├── sub-021_log.log
+│       └── sub-026_log.log
+├── README.md
 ├── results
-│   └── reports
-│
+│   └── reports
+│       └── raw_eeg_quality_report.csv
 ├── scripts
-│   ├── foo
-│   │   ├── 01_raw_eeg_evaluation.ipynb
-│   │   ├── rawdata_anlys.ipynb
-│   │   └── rawdata_anlys.py
-│   └── main
-│
-├── src
-│   └── poetryeeg_anlys
-│       ├── __init__.py
-│       └── config.py
-│
-└── setup.py
+│   ├── foo
+│   │   ├── 01_raw_eeg_evaluation.ipynb
+│   │   ├── 02_preprocessing_pipeline.ipynb
+│   │   ├── 03_epoch_analyse.ipynb
+│   │   ├── add_label.py
+│   │   ├── features_extraction.py
+│   │   ├── fooo.py
+│   │   ├── preprocess.py
+│   │   └── rawdata_anlys.ipynb
+│   └── main
+├── setup.py
+└── src
+    └── poetryeeg_anlys
+        ├── __init__.py
+        └── config.py
 ```
 
 ### Folder Description
