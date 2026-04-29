@@ -197,15 +197,15 @@ def process_subject(subject_id, mapping):
 
     # Attach labels
     whole_epochs = attach_labels(whole_epochs, behav_df)
-    good_epochs = attach_labels(good_epochs, behav_df)
+    # good_epochs = attach_labels(good_epochs, behav_df)
 
     # Save labeled FIF
     save_labeled_fif(whole_epochs, subject_id, "whole")
-    save_labeled_fif(good_epochs, subject_id, "good")
+    # save_labeled_fif(good_epochs, subject_id, "good")
 
     # Save parquet
-    epochs_to_parquet(whole_epochs, subject_id, "whole")
-    epochs_to_parquet(good_epochs, subject_id, "good")
+    # epochs_to_parquet(whole_epochs, subject_id, "whole")
+    # epochs_to_parquet(good_epochs, subject_id, "good")
 
 
 # ==============================
