@@ -1,14 +1,27 @@
 """
-This script is use for label the epochs with their respective behavioral rating.
+This script is used to label EEG epochs with their corresponding behavioral ratings.
 
 Author : Pramit Biswas
-
 Version : v0.0
 
-Pipiline
+Pipeline
 ------------------------------
+1. Initialize project paths and create output directories.
+2. Load participant mapping from participants.tsv.
+3. Match each EEG subject ID with its corresponding behavioral rating file.
+4. Load behavioral ratings and validate trial consistency (210 trials).
+5. Load preprocessed EEG epoch files (whole stimulus and good stimulus).
+6. Align EEG epochs with behavioral trials using trial_index metadata.
+7. Attach behavioral labels (PoemType, Block, AA, Imagery, Moved,
+   Originality, Creativity) to epoch metadata.
+8. Encode categorical labels (PoemType, Block) into numerical format.
+9. Save labeled EEG epochs in FIF format for EEG analysis.
+10. Flatten epoch-wise EEG signals and combine them with metadata.
+11. Save machine-learning-ready labeled datasets in Parquet format.
+12. Repeat the process for all available subjects.
 
 """
+
 import mne
 import pandas as pd
 import numpy as np
