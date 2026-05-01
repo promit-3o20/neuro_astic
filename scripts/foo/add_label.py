@@ -95,6 +95,14 @@ def load_behavior(subject_id, mapping):
     if len(df) != 210:
         raise ValueError(f"{subject_id}: Expected 210 trials, got {len(df)}")
 
+    # ==============================
+    # FIX BLOCK COLUMN
+    # Fill missing Block values using previous valid block
+    # Example:
+    # Block-1, NaN, NaN, ... -> Block-1 repeated until next block
+    # ==============================
+    df["Block"] = df["Block"].ffill()
+
     return df
 
 
