@@ -266,7 +266,7 @@ def compute_windowed_bandpower(
     all_band_power = []
 
     for start in windows:
-        logger.debug(f"Window: {start:.2f} → {start + window_size:.2f}")
+        logger.debug(f"Window: {start:.2f} -> {start + window_size:.2f}")
 
         ep = epochs.copy().crop(tmin=start, tmax=start + window_size)
 
@@ -430,7 +430,7 @@ def save_features(df: pd.DataFrame, path: str):
     - Overwrites file if it already exists.
     """
     df.to_parquet(path, compression="snappy")
-    logger.info(f"Saved features → {path}")
+    logger.info(f"Saved features -> {path}")
 
 
 def process_single_file(file_path: str, save_path: str = None):
@@ -588,7 +588,7 @@ def main():
     - Modify paths before running.
     - Designed for flexible switching between debug and batch modes.
     """
-    DEBUG = True
+    DEBUG = False
 
     INPUT_DIR = str(EXTRCT_FETRS)
     OUTPUT_DIR = str(FETRS_DIR)

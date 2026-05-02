@@ -60,7 +60,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 
 from xgboost import XGBClassifier
-
+from tqdm import tqdm
 
 # ---------------------------------------------------------------------
 # CONFIG
@@ -136,7 +136,7 @@ def get_models(random_state: int = 42) -> dict:
                 C=1.0,
                 max_iter=5000,
                 class_weight="balanced",
-                multi_class="multinomial",
+                # multi_class="multinomial",
                 random_state=random_state,
             )),
         ]),
@@ -165,7 +165,8 @@ def get_models(random_state: int = 42) -> dict:
                 objective="multi:softprob",
                 eval_metric="mlogloss",
                 random_state=random_state,
-                n_jobs=-1,
+                tree_method="hist",   # 🔥 CUDA
+                device="cuda",            # (new API safety)
             )),
         ]),
     }
@@ -251,8 +252,11 @@ def run_within_subject_cv(
     rows = []
     cm_store = {name: [] for name in models.keys()}
 
-    for model_name, model in models.items():
-        for fold, (tr_idx, te_idx) in enumerate(skf.split(X, y), start=1):
+    for model_name, model in tqdm(models.items(), desc=f"{subject_id} Models", leave=False):
+        for fold, (tr_idx, te_idx) in enumerate(
+            tqdm(skf.split(X, y), total=n_splits, desc=f"{model_name} Folds", leave=False),
+            start=1
+        ):
             X_train, X_test = X[tr_idx], X[te_idx]
             y_train, y_test = y[tr_idx], y[te_idx]
 
@@ -293,7 +297,7 @@ def run_group_analysis(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict
     files = sorted(data_dir.glob(FILE_PATTERN))
     print(f"Found {len(files)} subject files")
 
-    for file in files:
+    for file in tqdm(files, desc="Subjects"):
         subject_id = file.stem.split("_")[0]   # e.g., sub-021
         print(f"Processing {subject_id} ...")
 

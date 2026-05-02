@@ -185,7 +185,7 @@ def process_all_roi_files(input_dir: str, output_dir: str):
 
     if all_dfs:
         final_df = pd.concat(all_dfs, ignore_index=True)
-        final_path = os.path.join(output_dir, "all_subjects_roi_bpfeatures.parquet")
+        final_path = os.path.join(output_dir, "all_subjects_roibpfeatures.parquet")
         final_df.to_parquet(final_path, compression="snappy")
 
         logger.info(f"Saved combined ROI dataset -> {final_path}")
@@ -196,7 +196,7 @@ def process_all_roi_files(input_dir: str, output_dir: str):
 # MAIN
 # =========================================================
 def main():
-    DEBUG = True
+    DEBUG = False
 
     debug_in = INPUT_DIR / "sub-021_bpfeatures.parquet"
     debug_out = OUTPUT_DIR / "sub-021_roi_bpfeatures.parquet"
