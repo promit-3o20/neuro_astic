@@ -40,7 +40,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = (BASE_DIR / "../../data").resolve()
 LOG_DIR = (BASE_DIR / "../../logs/fetrs").resolve()
 
-INPUT_DIR = DATA_DIR / "features"
+INPUT_DIR = DATA_DIR / "features/bp0"
 OUTPUT_DIR = DATA_DIR / "features/roi_ftrs"
 
 for d in [OUTPUT_DIR, LOG_DIR]:

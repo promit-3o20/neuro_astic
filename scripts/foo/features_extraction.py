@@ -46,7 +46,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = (BASE_DIR / "../../data").resolve()
 LOG_DIR = (BASE_DIR / "../../logs/fetrs").resolve()
 
-FETRS_DIR = DATA_DIR / "features"
+FETRS_DIR = DATA_DIR / "features/bp0"
 EXTRCT_FETRS = DATA_DIR/ "intrmd_data/raw_label"
 
 # create all directories (including logs)
