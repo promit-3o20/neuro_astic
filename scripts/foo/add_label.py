@@ -211,7 +211,7 @@ def process_subject(subject_id, mapping):
         return
 
     whole_epochs = mne.read_epochs(whole_file, preload=True)
-    good_epochs = mne.read_epochs(good_file, preload=True)
+    # good_epochs = mne.read_epochs(good_file, preload=True)
 
     # Load behavior using TSV mapping
     behav_df = load_behavior(subject_id, mapping)

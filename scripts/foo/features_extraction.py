@@ -33,11 +33,16 @@ from pathlib import Path
 # ==============================
 
 FREQ_BANDS: Dict[str, Tuple[float, float]] = {
-    "delta": (0.5, 4),
+    # "delta": (0.5, 4),
+    # "theta": (4, 8),
+    # "alpha": (8, 13),
+    # "beta": (13, 30),
+    # "gamma": (30, 45),
+    "delta": (0, 4),
     "theta": (4, 8),
-    "alpha": (8, 13),
-    "beta": (13, 30),
-    "gamma": (30, 45),
+    "alpha": (8, 12),
+    "beta": (12, 30),
+    "gamma": (30, 48),
 }
 # ==============================
 # PATHS
