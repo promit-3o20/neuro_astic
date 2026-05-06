@@ -38,7 +38,7 @@ from pathlib import Path
 
 CONFIG = {
     "sampling_rate": 512,
-    "bandpass": (0.5, 45),
+    "bandpass": (0.5, 48),
     "notch": [50, 100],
     "epoch_tmin": -4.0,
     "epoch_tmax": 11.0,
@@ -380,32 +380,32 @@ def preprocessing_pipeline(file_path):
         save_epochs(stim_epochs, WHOLE_STIM_EPO / f"{subject_id}_allstim_epo.fif")
 
         # Step 2: Reject with full control
-        stim_good, stim_bad, good_idx, bad_idx = reject_epochs(stim_epochs, logger, "STIM")
+        # stim_good, stim_bad, good_idx, bad_idx = reject_epochs(stim_epochs, logger, "STIM")
 
         # Step 3: Save GOOD epochs
-        save_epochs(stim_good, G_STIM / f"{subject_id}_stim_epo.fif")
+        # save_epochs(stim_good, G_STIM / f"{subject_id}_stim_epo.fif")
 
         # Step 4: Save BAD epochs (NEW)
-        save_epochs(stim_bad, B_STIM / f"{subject_id}_badstim_epo.fif")
+        # save_epochs(stim_bad, B_STIM / f"{subject_id}_badstim_epo.fif")
 
         # Step 5: Save indices (VERY IMPORTANT)
-        np.savez(
-            INDICES_STIM / f"{subject_id}_indices.npz",
-            good_idx=good_idx,
-            bad_idx=bad_idx
-        )
+        # np.savez(
+        #     INDICES_STIM / f"{subject_id}_indices.npz",
+        #     good_idx=good_idx,
+        #     bad_idx=bad_idx
+        # )
 
         # ---- REST ----
-        start_rest = epoch_rest(raw, events, event_id, CONFIG["rest_start"], "START", logger)
-        end_rest = epoch_rest(raw, events, event_id, CONFIG["rest_end"], "END", logger)
+        # start_rest = epoch_rest(raw, events, event_id, CONFIG["rest_start"], "START", logger)
+        # end_rest = epoch_rest(raw, events, event_id, CONFIG["rest_end"], "END", logger)
 
-        if start_rest:
-            start_good, start_bad, _, _ = reject_epochs(start_rest, logger, "START REST")
-            save_epochs(start_good, START_REST_EPO / f"{subject_id}_strt_rest_epo.fif")
+        # if start_rest:
+        #     start_good, start_bad, _, _ = reject_epochs(start_rest, logger, "START REST")
+        #     save_epochs(start_good, START_REST_EPO / f"{subject_id}_strt_rest_epo.fif")
 
-        if end_rest:
-            end_good, end_bad, _, _ = reject_epochs(end_rest, logger, "END REST")
-            save_epochs(end_good, END_REST_EPO / f"{subject_id}_end_rest_epo.fif")
+        # if end_rest:
+        #     end_good, end_bad, _, _ = reject_epochs(end_rest, logger, "END REST")
+        #     save_epochs(end_good, END_REST_EPO / f"{subject_id}_end_rest_epo.fif")
 
         logger.info("Processing completed successfully")
 
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         print("No files found")
     else:
         # 👉 DEBUG MODE (IMPORTANT FOR YOU)
-        preprocessing_pipeline(str(files[1]))
+        # preprocessing_pipeline(str(files[1]))
 
         # 👉 AFTER VALIDATION
-        # batch_process()
+        batch_process()

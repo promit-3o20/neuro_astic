@@ -200,15 +200,15 @@ def process_subject(subject_id, mapping):
     print(f"\nProcessing {subject_id}")
 
     whole_file = WHOLE_STIM / f"{subject_id}_allstim_epo.fif"
-    good_file = GOOD_STIM / f"{subject_id}_stim_epo.fif"
+    # good_file = GOOD_STIM / f"{subject_id}_stim_epo.fif"
 
     if not whole_file.exists():
         print(f"Missing: {whole_file}")
         return
 
-    if not good_file.exists():
-        print(f"Missing: {good_file}")
-        return
+    # if not good_file.exists():
+    #     print(f"Missing: {good_file}")
+    #     return
 
     whole_epochs = mne.read_epochs(whole_file, preload=True)
     # good_epochs = mne.read_epochs(good_file, preload=True)

@@ -98,7 +98,7 @@ def get_feature_columns(
         "Imagery",
         "Moved",
         "Originality",
-        "Creativity",
+        # "Creativity",
         "Subject",
         "subject",
         "sub",

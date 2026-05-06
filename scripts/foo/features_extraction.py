@@ -38,7 +38,7 @@ FREQ_BANDS: Dict[str, Tuple[float, float]] = {
     # "alpha": (8, 13),
     # "beta": (13, 30),
     # "gamma": (30, 45),
-    "delta": (0, 4),
+    "delta": (0.5, 4),
     "theta": (4, 8),
     "alpha": (8, 12),
     "beta": (12, 30),
@@ -191,7 +191,7 @@ def compute_psd(epochs: mne.Epochs):
     - Uses MNE's modern `compute_psd` API.
     """
     psd = epochs.compute_psd(
-        method="welch", fmin=0.5, fmax=45, n_fft=1024, n_overlap=512, verbose=False
+        method="welch", fmin=0.5, fmax=48, n_fft=1024, n_overlap=512, verbose=False
     )
     return psd.get_data(), psd.freqs
 
@@ -380,17 +380,39 @@ def extract_bandpower_features(epochs: mne.Epochs, bands=FREQ_BANDS) -> pd.DataF
     epochs = pick_eeg_channels(epochs)
     ch_names = epochs.ch_names
 
+    # -----------------------------------------
+    # BASELINE
+    # -----------------------------------------
     baseline = compute_windowed_bandpower(epochs, -4, 0)
+
+    # mean baseline across windows
     baseline_mean = baseline.mean(axis=0)
 
+    # -----------------------------------------
+    # EARLY WINDOWS
+    # -----------------------------------------
     early = compute_windowed_bandpower(epochs, 0, 5)
-    early_mean = early.mean(axis=0)
 
+    # normalize EACH WINDOW separately
+    early_norm_windows = log_baseline_normalize(
+        early,
+        baseline_mean[np.newaxis, ...]
+    )
+
+    # average normalized windows
+    early_norm = early_norm_windows.mean(axis=0)
+
+    # -----------------------------------------
+    # LATE WINDOWS
+    # -----------------------------------------
     late = compute_windowed_bandpower(epochs, 5, 10)
-    late_mean = late.mean(axis=0)
 
-    early_norm = log_baseline_normalize(early_mean, baseline_mean)
-    late_norm = log_baseline_normalize(late_mean, baseline_mean)
+    late_norm_windows = log_baseline_normalize(
+        late,
+        baseline_mean[np.newaxis, ...]
+    )
+
+    late_norm = late_norm_windows.mean(axis=0)
 
     early_flat, early_names = flatten_features(early_norm, ch_names, bands, "early")
     late_flat, late_names = flatten_features(late_norm, ch_names, bands, "late")
