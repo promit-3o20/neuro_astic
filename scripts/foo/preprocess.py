@@ -416,7 +416,15 @@ def preprocessing_pipeline(file_path):
 # ==============================
 # BATCH PROCESS
 # ==============================
+def already_processed(subject_id):
 
+    required_files = [
+        FILTER_DIR / f"{subject_id}_filtered_raw.fif",
+        ICA_DIR / f"{subject_id}_ica_raw.fif",
+        WHOLE_STIM_EPO / f"{subject_id}_allstim_epo.fif",
+    ]
+
+    return all(f.exists() for f in required_files)
 
 def batch_process():
     files = list(RAW_DIR.rglob("sub-*/eeg/*.set"))
@@ -424,8 +432,15 @@ def batch_process():
     print(f"Found {len(files)} files")
 
     for file in files:
-        preprocessing_pipeline(str(file))
 
+        subject_id = Path(file).parts[-3]
+
+        # ✅ Skip already processed subjects
+        if already_processed(subject_id):
+            print(f"Skipping {subject_id} (already processed)")
+            continue
+
+        preprocessing_pipeline(str(file))
 
 # ==============================
 # MAIN

@@ -244,39 +244,48 @@ def run_loso_cv(data_dir: Path):
 
     models = get_models(random_state=RANDOM_STATE)
 
-    for test_subject in tqdm(subject_ids, desc="LOSO Subjects"):
-        print(f"Testing on {test_subject} ...")
+    total_steps = len(subject_ids) * len(models)
 
-        train_dfs = [subject_data[s] for s in subject_ids if s != test_subject]
-        test_df = subject_data[test_subject]
+    with tqdm(total=total_steps, desc="Running LOSO-CV") as pbar:
 
-        train_df = pd.concat(train_dfs, ignore_index=True)
+        for test_subject in subject_ids:
 
-        X_train = train_df[feature_cols].values
-        y_train = le.transform(train_df[TARGET].values)
+            train_dfs = [subject_data[s] for s in subject_ids if s != test_subject]
+            test_df = subject_data[test_subject]
 
-        X_test = test_df[feature_cols].values
-        y_test = le.transform(test_df[TARGET].values)
+            train_df = pd.concat(train_dfs, ignore_index=True)
 
-        for model_name, model in models.items():
-            clf = clone(model)
-            clf.fit(X_train, y_train)
+            X_train = train_df[feature_cols].values
+            y_train = le.transform(train_df[TARGET].values)
 
-            y_pred = clf.predict(X_test)
-            y_prob = clf.predict_proba(X_test)
+            X_test = test_df[feature_cols].values
+            y_test = le.transform(test_df[TARGET].values)
 
-            scores = compute_metrics(y_test, y_pred, y_prob, class_labels)
-            group_cm[model_name].append(scores["confusion_matrix"])
+            for model_name, model in models.items():
+                clf = clone(model)
+                clf.fit(X_train, y_train)
 
-            all_metrics.append({
-                "TestSubject": test_subject,
-                "Model": model_name,
-                "Accuracy": scores["accuracy"],
-                "Precision": scores["precision"],
-                "Recall": scores["recall"],
-                "F1": scores["f1"],
-                "AUC": scores["auc"],
-            })
+                y_pred = clf.predict(X_test)
+                y_prob = clf.predict_proba(X_test)
+
+                scores = compute_metrics(y_test, y_pred, y_prob, class_labels)
+                group_cm[model_name].append(scores["confusion_matrix"])
+
+                all_metrics.append({
+                    "TestSubject": test_subject,
+                    "Model": model_name,
+                    "Accuracy": scores["accuracy"],
+                    "Precision": scores["precision"],
+                    "Recall": scores["recall"],
+                    "F1": scores["f1"],
+                    "AUC": scores["auc"],
+                })
+
+                pbar.update(1)
+                pbar.set_postfix({
+                    "Subject": test_subject,
+                    "Model": model_name
+                })
 
     all_metrics_df = pd.DataFrame(all_metrics)
 

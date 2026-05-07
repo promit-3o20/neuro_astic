@@ -228,6 +228,17 @@ def process_subject(subject_id, mapping):
     # epochs_to_parquet(whole_epochs, subject_id, "whole")
     # epochs_to_parquet(good_epochs, subject_id, "good")
 
+def already_processed(subject_id):
+    """
+    Skip subject if final outputs already exist.
+    """
+
+    required_files = [
+        RAW_LABEL_DIR / f"{subject_id}_whole_epo.fif",
+        # LABELED_DIR / f"{subject_id}_whole.parquet",
+    ]
+
+    return all(f.exists() for f in required_files)
 
 # ==============================
 # MAIN
@@ -244,9 +255,14 @@ def main():
     print(f"Found {len(subject_ids)} subjects")
 
     for subject_id in subject_ids:
+
+        # ✅ Skip already processed subjects
+        if already_processed(subject_id):
+            print(f"Skipping {subject_id} (already processed)")
+            continue
+
         print(f"{subject_id} → {mapping.get(subject_id, 'NOT FOUND')}")
         process_subject(subject_id, mapping)
-
 
 if __name__ == "__main__":
     main()

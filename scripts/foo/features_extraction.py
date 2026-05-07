@@ -509,6 +509,17 @@ def process_single_file(file_path: str, save_path: str = None):
 
     return df
 
+def already_processed(subject: str, output_dir: str):
+    """
+    Check whether subject feature file already exists.
+    """
+
+    output_file = os.path.join(
+        output_dir,
+        f"{subject}_bpfeatures.parquet"
+    )
+
+    return os.path.exists(output_file)
 
 def process_all_files(input_dir: str, output_dir: str):
     """
@@ -554,7 +565,13 @@ def process_all_files(input_dir: str, output_dir: str):
     all_dfs = []
 
     for file_path in files:
+
         subject = os.path.basename(file_path).split("_")[0]
+
+        # ✅ Skip already processed subjects
+        if already_processed(subject, output_dir):
+            logger.info(f"Skipping {subject} (already processed)")
+            continue
 
         logger.info(f"Processing subject: {subject}")
 
@@ -564,7 +581,11 @@ def process_all_files(input_dir: str, output_dir: str):
             df = extract_bandpower_features(epochs)
             df["subject"] = subject
 
-            save_path = os.path.join(output_dir, f"{subject}_bpfeatures.parquet")
+            save_path = os.path.join(
+                output_dir,
+                f"{subject}_bpfeatures.parquet"
+            )
+
             save_features(df, save_path)
 
             all_dfs.append(df)
@@ -572,10 +593,16 @@ def process_all_files(input_dir: str, output_dir: str):
         except Exception as e:
             logger.error(f"Error in {subject}: {e}", exc_info=True)
 
+    # Combine only newly processed files
     if all_dfs:
+
         final_df = pd.concat(all_dfs, ignore_index=True)
 
-        final_path = os.path.join(output_dir, "all_subjects_features.parquet")
+        final_path = os.path.join(
+            output_dir,
+            "all_subjects_features.parquet"
+        )
+
         save_features(final_df, final_path)
 
         logger.info(f"Final dataset shape: {final_df.shape}")

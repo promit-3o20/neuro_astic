@@ -153,6 +153,17 @@ def process_roi_file(input_path: str, output_path: str):
     roi_df.to_parquet(output_path, compression="snappy")
     logger.info(f"Saved ROI features -> {output_path}")
 
+def already_processed(subject: str, output_dir: str):
+    """
+    Check whether ROI feature file already exists.
+    """
+
+    output_file = os.path.join(
+        output_dir,
+        f"{subject}_roi_bpfeatures.parquet"
+    )
+
+    return os.path.exists(output_file)
 
 def process_all_roi_files(input_dir: str, output_dir: str):
     """
@@ -166,26 +177,52 @@ def process_all_roi_files(input_dir: str, output_dir: str):
     all_dfs = []
 
     for file_path in files:
-        subject = os.path.basename(file_path).replace("_bpfeatures.parquet", "")
+
+        subject = os.path.basename(file_path).replace(
+            "_bpfeatures.parquet",
+            ""
+        )
+
+        # ✅ Skip already processed subjects
+        if already_processed(subject, output_dir):
+            logger.info(f"Skipping {subject} (already processed)")
+            continue
+
         logger.info(f"Processing subject: {subject}")
 
         try:
             df = pd.read_parquet(file_path)
+
             roi_df = group_roi_features(df)
             roi_df["subject"] = subject
 
-            save_path = os.path.join(output_dir, f"{subject}_roi_bpfeatures.parquet")
+            save_path = os.path.join(
+                output_dir,
+                f"{subject}_roi_bpfeatures.parquet"
+            )
+
             roi_df.to_parquet(save_path, compression="snappy")
 
             logger.info(f"Saved ROI file -> {save_path}")
+
             all_dfs.append(roi_df)
 
         except Exception as e:
-            logger.error(f"Error processing {subject}: {e}", exc_info=True)
+            logger.error(
+                f"Error processing {subject}: {e}",
+                exc_info=True
+            )
 
+    # Combine only newly processed files
     if all_dfs:
+
         final_df = pd.concat(all_dfs, ignore_index=True)
-        final_path = os.path.join(output_dir, "all_subjects_roibpfeatures.parquet")
+
+        final_path = os.path.join(
+            output_dir,
+            "all_subjects_roibpfeatures.parquet"
+        )
+
         final_df.to_parquet(final_path, compression="snappy")
 
         logger.info(f"Saved combined ROI dataset -> {final_path}")
