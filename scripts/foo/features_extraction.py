@@ -283,7 +283,7 @@ def compute_windowed_bandpower(
     return np.stack(all_band_power)
 
 
-def log_baseline_normalize(power, baseline, eps=1e-10):
+def log_baseline_normalize(power, baseline, eps=1e-30):
     """
     Apply log baseline normalization.
 
@@ -310,7 +310,7 @@ def log_baseline_normalize(power, baseline, eps=1e-10):
     - Stabilizes variance.
     - Common in EEG spectral analysis.
     """
-    return np.log((power + eps) / (baseline + eps))
+    return np.log10((power + eps) / (baseline + eps))
 
 
 def flatten_features(data, ch_names, bands, prefix):
@@ -393,26 +393,28 @@ def extract_bandpower_features(epochs: mne.Epochs, bands=FREQ_BANDS) -> pd.DataF
     # -----------------------------------------
     early = compute_windowed_bandpower(epochs, 0, 5)
 
+    early_mean = early.mean(axis=0)
     # normalize EACH WINDOW separately
-    early_norm_windows = log_baseline_normalize(
-        early,
-        baseline_mean[np.newaxis, ...]
+    early_norm = log_baseline_normalize(
+        early_mean,
+        baseline_mean
     )
 
     # average normalized windows
-    early_norm = early_norm_windows.mean(axis=0)
+    # early_norm = early_norm_windows.mean(axis=0)
 
     # -----------------------------------------
     # LATE WINDOWS
     # -----------------------------------------
     late = compute_windowed_bandpower(epochs, 5, 10)
 
-    late_norm_windows = log_baseline_normalize(
-        late,
-        baseline_mean[np.newaxis, ...]
+    late_mean = late.mean(axis=0)
+    late_norm = log_baseline_normalize(
+        late_mean,
+        baseline_mean
     )
 
-    late_norm = late_norm_windows.mean(axis=0)
+    # late_norm = late_norm_windows.mean(axis=0)
 
     early_flat, early_names = flatten_features(early_norm, ch_names, bands, "early")
     late_flat, late_names = flatten_features(late_norm, ch_names, bands, "late")
