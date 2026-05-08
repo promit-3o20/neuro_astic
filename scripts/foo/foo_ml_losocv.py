@@ -95,7 +95,7 @@ def get_feature_columns(
         "trial_index",
         "Block",
         "AA",
-        "Imagery",
+        # "Imagery",
         "Moved",
         "Originality",
         # "Creativity",
@@ -152,8 +152,8 @@ def get_models(random_state: int = 42) -> dict:
             ("imputer", SimpleImputer(strategy="median")),
             ("clf", XGBClassifier(
                 n_estimators=300,
-                max_depth=4,
-                learning_rate=0.05,
+                max_depth=6,
+                learning_rate=0.01,
                 subsample=0.8,
                 colsample_bytree=0.8,
                 objective="multi:softprob",
@@ -234,8 +234,8 @@ def run_loso_cv(data_dir: Path):
     group_cm = defaultdict(list)
 
     first_df = next(iter(subject_data.values()))
-    feature_cols = get_feature_columns(first_df, target=TARGET, time_window="early")
-    # print(feature_cols)
+    feature_cols = get_feature_columns(first_df, target=TARGET, time_window="late")
+    print(feature_cols)
     # Global label encoder across all subjects
     all_labels = pd.concat([df[TARGET] for df in subject_data.values()], axis=0).values
     le = LabelEncoder()
