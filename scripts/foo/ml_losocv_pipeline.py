@@ -380,9 +380,9 @@ from tqdm import tqdm
 # CONFIG
 # ─────────────────────────────────────────────
 BASE_DIR   = Path(__file__).resolve().parent
-DATA_DIR   = (BASE_DIR / "../data").resolve()
+DATA_DIR   = (BASE_DIR / "../../data").resolve()
 INPUT_DIR  = DATA_DIR / "features/roi_ftrs2"
-OUTPUT_DIR = BASE_DIR / "../results/ml_pipeline"
+OUTPUT_DIR = BASE_DIR / "../../results/ml_pipeline"
 PLOT_DIR   = OUTPUT_DIR / "plots"
 
 TARGET        = "PoemType"
