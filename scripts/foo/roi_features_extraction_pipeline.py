@@ -58,8 +58,8 @@ EPS = 1e-30
 # PATHS
 # ==============================
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = (BASE_DIR / "../data").resolve()
-LOG_DIR = (BASE_DIR / "../logs/fetrs").resolve()
+DATA_DIR = (BASE_DIR / "../../data").resolve()
+LOG_DIR = (BASE_DIR / "../../logs/fetrs").resolve()
 
 FETRS_DIR = DATA_DIR / "features/roi_ftrs2"
 EXTRCT_FETRS = DATA_DIR / "intrmd_data/raw_label"

@@ -425,7 +425,7 @@ from tqdm import tqdm
 BASE_DIR   = Path(__file__).resolve().parent
 DATA_DIR   = (BASE_DIR / "../../data").resolve()
 INPUT_DIR  = DATA_DIR / "features/roi_ftrs2"
-OUTPUT_DIR = BASE_DIR / "../../results/ml_pipeline1"
+OUTPUT_DIR = BASE_DIR / "../results/ml_pipeline"
 PLOT_DIR   = OUTPUT_DIR / "plots"
 
 TARGET        = "PoemType"
