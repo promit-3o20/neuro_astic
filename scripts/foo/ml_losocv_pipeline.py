@@ -788,18 +788,23 @@ def perform_shap_analysis(
     shap_values = explainer.shap_values(X)
     
     # For multi-class, shap_values is a list of arrays
-    # We'll create class-specific plots and aggregate
+    # Convert to 3D array: (n_classes, n_samples, n_features)
+    shap_values_3d = np.array(shap_values)
     
     # -----------------------------------------
-    # SHAP Summary Plot (combined)
+    # SHAP Summary Plot (combined) - using absolute values
     # -----------------------------------------
     plt.figure(figsize=(12, 8))
     
+    # Compute mean absolute SHAP across all classes for summary
+    mean_abs_shap = np.mean(np.abs(shap_values_3d), axis=0)
+    
     shap.summary_plot(
-        shap_values,
+        mean_abs_shap,
         X,
         show=False,
         max_display=25,
+        feature_names=shared_cols,
     )
     
     plt.tight_layout()
@@ -814,11 +819,12 @@ def perform_shap_analysis(
     plt.figure(figsize=(10, 7))
     
     shap.summary_plot(
-        shap_values,
+        mean_abs_shap,
         X,
         plot_type="bar",
         show=False,
         max_display=25,
+        feature_names=shared_cols,
     )
     
     plt.tight_layout()
@@ -835,10 +841,11 @@ def perform_shap_analysis(
         plt.figure(figsize=(12, 8))
         
         shap.summary_plot(
-            shap_values[i],
+            shap_values_3d[i],
             X,
             show=False,
             max_display=25,
+            feature_names=shared_cols,
         )
         
         plt.title(f"SHAP for class: {class_name}", fontsize=12, fontweight="bold")
@@ -853,10 +860,13 @@ def perform_shap_analysis(
     # Save SHAP values to CSV
     # -----------------------------------------
     n_classes = len(class_names)
-    mean_shap_abs = np.zeros(len(shared_cols))
+    n_samples = X.shape[0]
+    n_features = len(shared_cols)
     
+    # Compute mean absolute SHAP for each feature across all classes and samples
+    mean_shap_abs = np.zeros(n_features)
     for class_idx in range(n_classes):
-        mean_shap_abs += np.mean(np.abs(shap_values[class_idx]), axis=0)
+        mean_shap_abs += np.mean(np.abs(shap_values_3d[class_idx]), axis=0)
     mean_shap_abs /= n_classes
     
     shap_df = pd.DataFrame({
@@ -871,7 +881,25 @@ def perform_shap_analysis(
     shap_df.to_csv(save_dir / "shap_values.csv", index=False)
     print(f"  Saved: shap_values.csv")
     
-    return shap_values, shap_df
+    # Save class-specific mean SHAP values
+    class_shap_dfs = []
+    for i, class_name in enumerate(class_names):
+        class_df = pd.DataFrame({
+            "feature": shared_cols,
+            f"mean_shap_{class_name}": np.mean(shap_values_3d[i], axis=0),
+            f"mean_abs_shap_{class_name}": np.mean(np.abs(shap_values_3d[i]), axis=0),
+        })
+        class_shap_dfs.append(class_df)
+    
+    # Merge all class-specific dataframes
+    class_shap_combined = class_shap_dfs[0]
+    for class_df in class_shap_dfs[1:]:
+        class_shap_combined = class_shap_combined.merge(class_df, on="feature")
+    
+    class_shap_combined.to_csv(save_dir / "shap_class_specific.csv", index=False)
+    print(f"  Saved: shap_class_specific.csv")
+    
+    return shap_values_3d, shap_df
 
 
 # ─────────────────────────────────────────────
