@@ -46,7 +46,7 @@ CONFIG = {
     "reject_threshold": 200e-6,
     "reject_tmin": 0.0,
     "reject_tmax": 10.0,
-    "ica_components": 20,
+    "ica_components": 0.99,
     "stim_onset": 65282,
     "stim_codes": [65281, 65282, 65283, 65284],
     "rest_start": (65285, 65286),

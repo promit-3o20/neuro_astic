@@ -3,7 +3,7 @@ EEG PoemType Classification — Full Feature Selection Pipeline
 =============================================================
 
 Author  : Pramit Biswas
-Version : v1.0
+Version : v2.0
 
 Overview
 --------
@@ -15,9 +15,11 @@ The workflow combines:
     - Leave-One-Subject-Out Cross-Validation (LOSO-CV)
     - Multi-model evaluation
     - XGBoost feature importance analysis
+    - SHAP analysis for model interpretability
     - Top-N feature subset optimization
     - Temporal delta feature engineering
     - ROI × frequency-band interpretability analysis
+    - Subject-level z-score normalization
 
 The primary goal is:
     Predict PoemType labels from EEG-derived ROI bandpower features
@@ -31,10 +33,11 @@ Models
     - Performs implicit feature selection
     - Baseline interpretable classifier
 
-2. SVM (RBF Kernel)
-    - Nonlinear classifier
-    - Captures complex EEG decision boundaries
-    - Uses probability estimates for AUC computation
+2. Random Forest
+    - Ensemble of decision trees
+    - Captures nonlinear interactions
+    - Provides feature importance scores
+    - Robust to overfitting
 
 3. XGBoost
     - Gradient boosted decision trees
@@ -86,7 +89,20 @@ Only numeric EEG-derived features are retained.
 
 --------------------------------------------------------------------
 
-[3] Correlation Pruning
+[3] Subject-Level Z-Score Normalization
+----------------------------------------
+Each subject's features are normalized independently:
+
+    x_norm = (x - μ_subject) / σ_subject
+
+Benefits:
+    - Removes between-subject amplitude differences
+    - Preserves within-subject EEG patterns
+    - Improves cross-subject generalization
+
+--------------------------------------------------------------------
+
+[4] Correlation Pruning
 -----------------------
 Highly correlated features are removed to reduce redundancy.
 
@@ -104,7 +120,7 @@ Benefits:
 
 --------------------------------------------------------------------
 
-[4] Leave-One-Subject-Out Cross-Validation (LOSO-CV)
+[5] Leave-One-Subject-Out Cross-Validation (LOSO-CV)
 ----------------------------------------------------
 Main evaluation strategy.
 
@@ -124,7 +140,7 @@ This prevents:
 
 --------------------------------------------------------------------
 
-[5] Performance Metrics
+[6] Performance Metrics
 -----------------------
 For every LOSO fold and model, compute:
 
@@ -141,7 +157,7 @@ Macro averaging ensures:
 
 --------------------------------------------------------------------
 
-[6] XGBoost Feature Importance
+[7] XGBoost Feature Importance
 ------------------------------
 During LOSO-CV:
     - XGBoost feature importances are accumulated
@@ -160,7 +176,21 @@ Feature rankings are later used for:
 
 --------------------------------------------------------------------
 
-[7] Top-N Feature Subset Optimization
+[8] SHAP Analysis
+-----------------
+After final model training:
+    - Compute SHAP values for XGBoost model
+    - Generate summary plots
+    - Identify feature contributions per class
+
+Benefits:
+    - Local and global interpretability
+    - Feature directionality analysis
+    - Class-specific patterns
+
+--------------------------------------------------------------------
+
+[9] Top-N Feature Subset Optimization
 -------------------------------------
 The pipeline evaluates multiple feature subset sizes:
 
@@ -181,8 +211,8 @@ Purpose:
 
 --------------------------------------------------------------------
 
-[8] Temporal Delta Feature Engineering
---------------------------------------
+[10] Temporal Delta Feature Engineering
+---------------------------------------
 For every matching early/late feature pair:
 
     delta = late − early
@@ -202,7 +232,7 @@ These features may encode:
 
 --------------------------------------------------------------------
 
-[9] Final LOSO-CV Re-evaluation
+[11] Final LOSO-CV Re-evaluation
 -------------------------------
 After adding temporal delta features:
     - Re-run full LOSO-CV
@@ -215,13 +245,13 @@ Purpose:
 
 --------------------------------------------------------------------
 
-[10] Visualization and Interpretability
+[12] Visualization and Interpretability
 ---------------------------------------
 
 A. Top Feature Importance Bar Plot
 ----------------------------------
 Displays:
-    - Top-N EEG features
+    - Top-20 EEG features
     - Importance magnitude
     - Feature-type colour coding
 
@@ -254,6 +284,15 @@ Generated for each model.
 Purpose:
     - Analyze class-specific performance
     - Identify commonly confused poem categories
+
+--------------------------------------------------------------------
+
+D. SHAP Summary Plots
+---------------------
+Global interpretability:
+    - SHAP summary (beeswarm) plot
+    - SHAP bar plot
+    - Class-specific SHAP analysis
 
 --------------------------------------------------------------------
 
@@ -311,14 +350,17 @@ The pipeline automatically saves:
 5. Top-feature plots
 6. ROI × band heatmaps
 7. Confusion matrices
+8. SHAP analysis plots
 
 Example outputs:
     stage1_summary.csv
     final_summary.csv
     final_feature_importances.csv
-    top40_features_final.png
+    top20_features_final.png
     importance_heatmap_final.png
     cm_final_XGBoost.png
+    shap_summary_plot.png
+    shap_bar_plot.png
 
 --------------------------------------------------------------------
 
@@ -334,7 +376,7 @@ The framework combines:
     - Robust validation
     - Feature engineering
     - Interpretable ML
-    - Neuroscientific analysis
+    - SHAP-based explainability
 
 making it suitable for:
     - EEG decoding studies
@@ -371,8 +413,9 @@ from sklearn.metrics import (
     f1_score, roc_auc_score, confusion_matrix,
 )
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+import shap
 from tqdm import tqdm
 
 
@@ -380,9 +423,9 @@ from tqdm import tqdm
 # CONFIG
 # ─────────────────────────────────────────────
 BASE_DIR   = Path(__file__).resolve().parent
-DATA_DIR   = (BASE_DIR / "../data").resolve()
+DATA_DIR   = (BASE_DIR / "../../data").resolve()
 INPUT_DIR  = DATA_DIR / "features/roi_ftrs2"
-OUTPUT_DIR = BASE_DIR / "../results/ml_pipeline"
+OUTPUT_DIR = BASE_DIR / "../../results/ml_pipeline1"
 PLOT_DIR   = OUTPUT_DIR / "plots"
 
 TARGET        = "PoemType"
@@ -423,7 +466,7 @@ plt.rcParams.update({
     "axes.edgecolor"   : PALETTE["grid"],
     "axes.grid"        : True,
     "grid.color"       : PALETTE["grid"],
-    "grid.linewidth"   : 0.6,
+    "grid.linewidth"   : 0.3,
     "text.color"       : PALETTE["text"],
     "axes.labelcolor"  : PALETTE["text"],
     "xtick.color"      : PALETTE["text"],
@@ -472,13 +515,21 @@ def feature_window(name: str) -> str:
 # ─────────────────────────────────────────────
 # FEATURE SELECTION UTILITIES
 # ─────────────────────────────────────────────
+def subject_normalize(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    """Apply z-score normalization per subject."""
+    df_norm = df.copy()
+    scaler = StandardScaler()
+    df_norm[feature_cols] = scaler.fit_transform(df[feature_cols])
+    return df_norm
+
+
 def prune_correlated_features(
     df: pd.DataFrame,
     feature_cols: list[str],
     threshold: float = CORR_THRESH,
 ) -> list[str]:
     """Drop one column from each highly correlated pair (|r| > threshold)."""
-    corr = df[feature_cols].corr().abs()
+    corr = df[feature_cols].corr(method="spearman").abs()
     upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
     to_drop = {col for col in upper.columns if any(upper[col] > threshold)}
     pruned  = [c for c in feature_cols if c not in to_drop]
@@ -516,7 +567,7 @@ def get_top_features(
 # FEATURE COLUMNS SELECTOR
 # ─────────────────────────────────────────────
 _EXCLUDE = {
-    TARGET, "trial_index", "Block", "AA",
+    TARGET, "trial_index", "Block", "AA", "Creativity", "Imagery",
     "Moved", "Originality", "Subject", "subject", "sub",
 }
 
@@ -542,13 +593,14 @@ def get_models(random_state: int = RANDOM_STATE) -> dict:
                 class_weight="balanced", random_state=random_state,
             )),
         ]),
-        "SVM_RBF": Pipeline([
+        "RandomForest": Pipeline([
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler",  StandardScaler()),
-            ("clf",     SVC(
-                kernel="rbf", C=1.0, gamma="scale",
-                probability=True, class_weight="balanced",
-                random_state=random_state,
+            ("clf",     RandomForestClassifier(
+                n_estimators=300, max_depth=10,
+                min_samples_split=5, min_samples_leaf=2,
+                class_weight="balanced", random_state=random_state,
+                n_jobs=-1,
             )),
         ]),
         "XGBoost": Pipeline([
@@ -624,11 +676,16 @@ def run_loso_cv(
 
     with tqdm(total=total_steps, desc=f"LOSO-CV [{tag}]") as pbar:
         for test_sub in subject_ids:
-            train_df = pd.concat(
-                [subject_data[s] for s in subject_ids if s != test_sub],
-                ignore_index=True,
-            )
-            test_df = subject_data[test_sub]
+            # Prepare training data (all except test subject)
+            train_dfs = []
+            for s in subject_ids:
+                if s != test_sub:
+                    df_norm = subject_normalize(subject_data[s], feature_cols)
+                    train_dfs.append(df_norm)
+            train_df = pd.concat(train_dfs, ignore_index=True)
+            
+            # Normalize test subject
+            test_df = subject_normalize(subject_data[test_sub], feature_cols)
 
             # Ensure delta cols exist in both if added
             shared_cols = [c for c in feature_cols if c in train_df.columns and c in test_df.columns]
@@ -660,9 +717,10 @@ def run_loso_cv(
 
                 # Accumulate XGBoost importances
                 if accumulate_importance and mname == "XGBoost":
-                    imp = clf.named_steps["clf"].feature_importances_
-                    for fname, fval in zip(shared_cols, imp):
-                        importance[fname] += float(fval)
+                    if hasattr(clf.named_steps["clf"], "feature_importances_"):
+                        imp = clf.named_steps["clf"].feature_importances_
+                        for fname, fval in zip(shared_cols, imp):
+                            importance[fname] += float(fval)
 
                 pbar.update(1)
                 pbar.set_postfix({"Sub": test_sub, "Model": mname})
@@ -678,6 +736,145 @@ def run_loso_cv(
 
 
 # ─────────────────────────────────────────────
+# SHAP ANALYSIS
+# ─────────────────────────────────────────────
+def perform_shap_analysis(
+    subject_data: dict[str, pd.DataFrame],
+    subject_ids: list[str],
+    feature_cols: list[str],
+    le: LabelEncoder,
+    class_labels: np.ndarray,
+    save_dir: Path,
+):
+    """
+    Train final XGBoost model on all data and generate SHAP plots.
+    """
+    print("\n[SHAP] Running SHAP analysis...")
+    
+    # Combine all subjects and normalize
+    all_dfs = []
+    for sid in subject_ids:
+        df_norm = subject_normalize(subject_data[sid], feature_cols)
+        all_dfs.append(df_norm)
+    
+    full_df = pd.concat(all_dfs, ignore_index=True)
+    shared_cols = [c for c in feature_cols if c in full_df.columns]
+    
+    X = full_df[shared_cols]
+    y = le.transform(full_df[TARGET])
+    
+    # -----------------------------------------
+    # Train final interpretation model
+    # -----------------------------------------
+    model = XGBClassifier(
+        n_estimators=300,
+        max_depth=6,
+        learning_rate=0.01,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        objective="multi:softprob",
+        eval_metric="mlogloss",
+        random_state=RANDOM_STATE,
+        tree_method="hist",
+        device="cuda",
+    )
+    
+    model.fit(X, y)
+    
+    # -----------------------------------------
+    # SHAP values
+    # -----------------------------------------
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X)
+    
+    # For multi-class, shap_values is a list of arrays
+    # We'll create class-specific plots and aggregate
+    
+    # -----------------------------------------
+    # SHAP Summary Plot (combined)
+    # -----------------------------------------
+    plt.figure(figsize=(12, 8))
+    
+    shap.summary_plot(
+        shap_values,
+        X,
+        show=False,
+        max_display=25,
+    )
+    
+    plt.tight_layout()
+    summary_path = save_dir / "shap_summary.png"
+    plt.savefig(summary_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"  Saved: {summary_path.name}")
+    
+    # -----------------------------------------
+    # SHAP Bar Plot (combined)
+    # -----------------------------------------
+    plt.figure(figsize=(10, 7))
+    
+    shap.summary_plot(
+        shap_values,
+        X,
+        plot_type="bar",
+        show=False,
+        max_display=25,
+    )
+    
+    plt.tight_layout()
+    bar_path = save_dir / "shap_bar.png"
+    plt.savefig(bar_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"  Saved: {bar_path.name}")
+    
+    # -----------------------------------------
+    # Class-specific SHAP plots
+    # -----------------------------------------
+    class_names = le.classes_
+    for i, class_name in enumerate(class_names):
+        plt.figure(figsize=(12, 8))
+        
+        shap.summary_plot(
+            shap_values[i],
+            X,
+            show=False,
+            max_display=25,
+        )
+        
+        plt.title(f"SHAP for class: {class_name}", fontsize=12, fontweight="bold")
+        plt.tight_layout()
+        
+        class_path = save_dir / f"shap_summary_{class_name}.png"
+        plt.savefig(class_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"  Saved: {class_path.name}")
+    
+    # -----------------------------------------
+    # Save SHAP values to CSV
+    # -----------------------------------------
+    n_classes = len(class_names)
+    mean_shap_abs = np.zeros(len(shared_cols))
+    
+    for class_idx in range(n_classes):
+        mean_shap_abs += np.mean(np.abs(shap_values[class_idx]), axis=0)
+    mean_shap_abs /= n_classes
+    
+    shap_df = pd.DataFrame({
+        "feature": shared_cols,
+        "mean_abs_shap": mean_shap_abs,
+        "type": [feature_type(f) for f in shared_cols],
+        "band": [feature_band(f) for f in shared_cols],
+        "roi": [feature_roi(f) for f in shared_cols],
+        "window": [feature_window(f) for f in shared_cols],
+    }).sort_values("mean_abs_shap", ascending=False)
+    
+    shap_df.to_csv(save_dir / "shap_values.csv", index=False)
+    print(f"  Saved: shap_values.csv")
+    
+    return shap_values, shap_df
+
+
+# ─────────────────────────────────────────────
 # AGGREGATE CONFUSION MATRICES
 # ─────────────────────────────────────────────
 def aggregate_cm(group_cm: dict) -> dict:
@@ -690,7 +887,7 @@ def aggregate_cm(group_cm: dict) -> dict:
 
 def plot_top_features_bar(
     importance_dict : dict[str, float],
-    top_n           : int = 40,
+    top_n           : int = 20,
     title           : str = "Top features by XGBoost gain (averaged across LOSO folds)",
     save_path       : Path | None = None,
 ):
@@ -889,7 +1086,7 @@ def plot_confusion_matrix(
 # ─────────────────────────────────────────────
 def main():
     print("\n" + "=" * 70)
-    print("EEG PoemType Classification — Full Feature Selection Pipeline")
+    print("EEG PoemType Classification — Full Feature Selection Pipeline v2.0")
     print("=" * 70)
 
     # ── 1. Load data ──────────────────────────────────────────────────
@@ -929,12 +1126,12 @@ def main():
     m_df1.to_csv(OUTPUT_DIR / "stage1_subject_metrics.csv", index=False)
     sum1.to_csv(OUTPUT_DIR / "stage1_summary.csv")
 
-    # ── 6. Plot: top-40 feature importance bar chart ──────────────────
-    print("\n[5] Plotting top-40 feature importance...")
+    # ── 6. Plot: top-20 feature importance bar chart ──────────────────
+    print("\n[5] Plotting top-20 feature importance...")
     plot_top_features_bar(
-        importance, top_n=40,
-        title="Top-40 features — XGBoost gain (stage 1, all pruned features)",
-        save_path=PLOT_DIR / "top40_features_bar.png",
+        importance, top_n=20,
+        title="Top-20 features — XGBoost gain (stage 1, all pruned features)",
+        save_path=PLOT_DIR / "top20_features_bar.png",
     )
     plot_importance_heatmap(
         importance, top_n=60,
@@ -1003,8 +1200,15 @@ def main():
 
     sum_delta.to_csv(OUTPUT_DIR / "final_summary.csv")
 
-    # ── 9. Plots: subset comparison, final top-40, final heatmap ──────
-    print("\n[8] Generating final plots...")
+    # ── 9. SHAP Analysis ──────────────────────────────────────────────
+    print("\n[8] Performing SHAP analysis...")
+    perform_shap_analysis(
+        subject_data_delta, subject_ids, delta_feature_cols,
+        le, class_labels, PLOT_DIR
+    )
+
+    # ── 10. Plots: subset comparison, final top-20, final heatmap ─────
+    print("\n[9] Generating final plots...")
 
     plot_subset_comparison(
         {k: v for k, v in subset_results.items()},
@@ -1012,9 +1216,9 @@ def main():
     )
 
     plot_top_features_bar(
-        imp_delta, top_n=40,
-        title="Top-40 features — XGBoost gain (final: best subset + delta)",
-        save_path=PLOT_DIR / "top40_features_final.png",
+        imp_delta, top_n=20,
+        title="Top-20 features — XGBoost gain (final: best subset + delta)",
+        save_path=PLOT_DIR / "top20_features_final.png",
     )
 
     plot_importance_heatmap(
@@ -1032,8 +1236,8 @@ def main():
             save_path=PLOT_DIR / f"cm_final_{mname}.png",
         )
 
-    # ── 10. Save feature list & importance ────────────────────────────
-    print("\n[9] Saving final feature list and importances...")
+    # ── 11. Save feature list & importance ────────────────────────────
+    print("\n[10] Saving final feature list and importances...")
     final_top = get_top_features(imp_delta, len(delta_feature_cols))
     pd.DataFrame({
         "feature"   : final_top,
@@ -1047,7 +1251,7 @@ def main():
     json_path = OUTPUT_DIR / "best_feature_cols.json"
     json_path.write_text(json.dumps(delta_feature_cols, indent=2))
 
-    # ── 11. Final console report ──────────────────────────────────────
+    # ── 12. Final console report ──────────────────────────────────────
     print("\n" + "=" * 70)
     print("PIPELINE COMPLETE")
     print("=" * 70)
@@ -1057,6 +1261,13 @@ def main():
     print(f"  Accuracy  : {xgb_delta['Accuracy']['mean']:.4f} ± {xgb_delta['Accuracy']['std']:.4f}")
     print(f"  F1 (macro): {xgb_delta['F1']['mean']:.4f} ± {xgb_delta['F1']['std']:.4f}")
     print(f"  AUC       : {xgb_delta['AUC']['mean']:.4f} ± {xgb_delta['AUC']['std']:.4f}")
+    
+    # Print Random Forest performance
+    rf_delta = sum_delta.loc["RandomForest"]
+    print("\nFinal Random Forest performance:")
+    print(f"  Accuracy  : {rf_delta['Accuracy']['mean']:.4f} ± {rf_delta['Accuracy']['std']:.4f}")
+    print(f"  F1 (macro): {rf_delta['F1']['mean']:.4f} ± {rf_delta['F1']['std']:.4f}")
+    print(f"  AUC       : {rf_delta['AUC']['mean']:.4f} ± {rf_delta['AUC']['std']:.4f}")
 
     print(f"\nOutputs saved to: {OUTPUT_DIR}")
     print(f"Plots saved to  : {PLOT_DIR}")
