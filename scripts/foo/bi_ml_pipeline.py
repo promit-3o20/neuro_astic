@@ -51,14 +51,14 @@ from tqdm import tqdm
 BASE_DIR   = Path(__file__).resolve().parent
 DATA_DIR   = (BASE_DIR / "../../data").resolve()
 INPUT_DIR  = DATA_DIR / "features/roi_ftrs2"
-OUTPUT_DIR = BASE_DIR / "../../results/ml_pipeline_binary_2"
+OUTPUT_DIR = BASE_DIR / "../../results/ml_pipeline_binary1"
 PLOT_DIR   = OUTPUT_DIR / "plots"
 
 TARGET        = "PoemType"
 RANDOM_STATE  = 42
 FILE_PATTERN  = "*_roi_bpfeatures.parquet"
 CORR_THRESH   = 0.90
-TOP_N_CANDIDATES = [30, 50, 80, 100]
+TOP_N_CANDIDATES = [30, 100]
 
 for d in [OUTPUT_DIR, PLOT_DIR]:
     d.mkdir(parents=True, exist_ok=True)
@@ -204,13 +204,13 @@ def get_top_features(
 # ─────────────────────────────────────────────
 # FEATURE COLUMNS SELECTOR
 # ─────────────────────────────────────────────
-_EXCLUDE = {
-    TARGET, "trial_index", "Block", "AA", "Imagery", "Creativity",
-    "Moved", "Originality", "subject",
-}
 # _EXCLUDE = {
-#     TARGET, "trial_index", "Block", "AA", "Imagery","Moved", "Originality", "subject",
+#     TARGET, "trial_index", "Block", "AA", "Imagery", "Creativity",
+#     "Moved", "Originality", "subject",
 # }
+_EXCLUDE = {
+    TARGET, "trial_index", "Block", "AA", "Imagery","Moved", "Originality", "subject",
+}
 
 def get_feature_columns(df: pd.DataFrame, extra_exclude: set | None = None) -> list[str]:
     exclude = _EXCLUDE | (extra_exclude or set())
