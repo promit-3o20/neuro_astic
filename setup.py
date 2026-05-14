@@ -13,6 +13,10 @@ setup(
         "pathlib",
         "scipy",
         "scikit-learn",
+        "tensorflow",
+        "torch",
+        "pyarrow",
+        "fastparquet"
         # "PyWavelets",
         # add more dependencies here if needed
     ],

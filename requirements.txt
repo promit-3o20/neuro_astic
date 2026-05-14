@@ -1,0 +1,13 @@
+mne
+numpy
+pandas
+matplotlib
+scipy
+pyarrow
+fastparquet
+scikit-learn
+seaborn
+tqdm
+torch
+pathlib
+logging
