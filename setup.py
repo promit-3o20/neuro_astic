@@ -5,21 +5,22 @@ setup(
     version="0.1.0",
     packages=find_packages("src"),
     package_dir={"": "src"},
+    python_requires=">=3.10",
     install_requires=[
         "mne",
         "numpy",
         "pandas",
         "matplotlib",
-        "pathlib",
         "scipy",
         "scikit-learn",
-        "tensorflow",
-        "torch",
         "pyarrow",
-        "fastparquet"
+        "fastparquet",
         # "PyWavelets",
-        # add more dependencies here if needed
     ],
+    extras_require={
+        "dl": ["torch", "tensorflow"],
+        "dev": ["pytest", "black", "ruff"],
+    },
 )
 
 # run from the root directoy
