@@ -565,7 +565,7 @@ def save_features(df: pd.DataFrame, path: str) -> None:
         Output file path.
     """
     df.to_parquet(path, compression="snappy")
-    logger.info(f"Saved features → {path}")
+    logger.info(f"Saved features -> {path}")
 
 
 def already_processed(subject: str, output_dir: str) -> bool:
@@ -697,7 +697,7 @@ def process_all_files(input_dir: str, output_dir: str, bp_dir: str) -> None:
     # ── Combine ROI DataFrames across newly processed subjects ─────────
     if all_roi_dfs:
         final_df = pd.concat(all_roi_dfs, ignore_index=True)
-        final_path = os.path.join(output_dir, "all_subjects_roi_bpfeatures.parquet")
+        final_path = os.path.join(output_dir, "all_subjects_roibpfeatures.parquet")
         save_features(final_df, final_path)
         logger.info(f"Combined ROI dataset shape: {final_df.shape}")
         logger.info("Batch processing complete.")
