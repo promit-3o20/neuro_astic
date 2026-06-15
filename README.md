@@ -70,7 +70,9 @@ https://doi.org/10.1038/s41597-025-06189-w
 
 OpenNeuro dataset:
 
-https://openneuro.org/datasets/ds006648
+Soma Chaudhuri and Joydeep Bhattacharya (2025). Poetry Assessment EEG Dataset 1. OpenNeuro. [Dataset] doi: doi:10.18112/openneuro.ds006648.v1.0.0
+
+Soma Chaudhuri and Joydeep Bhattacharya (2025). Poetry Assessment EEG Dataset 2. OpenNeuro. [Dataset] doi: doi:10.18112/openneuro.ds006647.v1.0.1
 
 Please cite the original dataset if you use this repository.
 
@@ -130,20 +132,93 @@ This design enables linking **neural responses with subjective aesthetic judgmen
 │       └── raw_eeg_quality_report.csv
 ├── scripts
 │   ├── foo
-│   │   ├── 01_raw_eeg_evaluation.ipynb
-│   │   ├── 02_preprocessing_pipeline.ipynb
-│   │   ├── 03_epoch_analyse.ipynb
 │   │   ├── add_label.py
+│   │   ├── bi_ml_pipeline.py
+│   │   ├── descriptive_stats.py
 │   │   ├── features_extraction.py
 │   │   ├── fooo.py
 │   │   ├── preprocess.py
-│   │   └── rawdata_anlys.ipynb
+│   │   ├── rawdata_anlys.ipynb
+│   │   ├── roi_features.py
+│   │   ├── train_cnnlstm.py
+│   │   ├── train_eegnet.py
+│   │   └── visualise.ipynb
 │   └── main
+│       ├── __pycache__
+│       │   └── run_preprocessing.cpython-314.pyc
+│       ├── run_dl.py
+│       ├── run_features.py
+│       ├── run_full_pipeline.py
+│       ├── run_labeling.py
+│       ├── run_ml.py
+│       └── run_preprocessing.py
 ├── setup.py
-└── src
-    └── poetryeeg_anlys
-        ├── __init__.py
-        └── config.py
+├── src
+│   ├── poetryeeg_anlys
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-314.pyc
+│   │   ├── config
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── constants.py
+│   │   │   ├── paths.py
+│   │   │   └── settings.py
+│   │   ├── dl
+│   │   │   ├── __init__.py
+│   │   │   ├── cnnlstm.py
+│   │   │   ├── eegnet.py
+│   │   │   └── trainer.py
+│   │   ├── features
+│   │   │   ├── __init__.py
+│   │   │   ├── bandpower.py
+│   │   │   ├── descriptive.py
+│   │   │   ├── feature_utils.py
+│   │   │   └── roi_bandpower.py
+│   │   ├── labeling
+│   │   │   ├── __init__.py
+│   │   │   ├── add_labels.py
+│   │   │   └── behavior.py
+│   │   ├── ml
+│   │   │   ├── __init__.py
+│   │   │   ├── evaluation.py
+│   │   │   ├── feature_selection.py
+│   │   │   ├── models.py
+│   │   │   └── pipeline.py
+│   │   ├── pipelines
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── feature_pipeline.py
+│   │   │   ├── full_pipeline.py
+│   │   │   ├── ml_pipeline.py
+│   │   │   └── preprocessing_pipeline.py
+│   │   ├── preprocessing
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── epoching.py
+│   │   │   ├── filtering.py
+│   │   │   ├── ica.py
+│   │   │   ├── preprocess.py
+│   │   │   └── quality.py
+│   │   ├── utils
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── helpers.py
+│   │   │   ├── io.py
+│   │   │   ├── logger.py
+│   │   │   └── validation.py
+│   │   └── visualization
+│   │       ├── __init__.py
+│   │       ├── eeg_viz.py
+│   │       └── plots.py
+│   └── poetryeeg_anlys.egg-info
+│       ├── dependency_links.txt
+│       ├── PKG-INFO
+│       ├── requires.txt
+│       ├── SOURCES.txt
+│       └── top_level.txt
+└── tests
+    └── test_imports.py
 ```
 
 ### Folder Description
